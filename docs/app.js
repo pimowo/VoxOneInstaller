@@ -11,6 +11,7 @@ let loader = null;
 const profilesEl = document.getElementById('profiles');
 const btnConnect = document.getElementById('btn-connect');
 const btnFlash = document.getElementById('btn-flash');
+const btnErase = document.getElementById('btn-erase');
 const statusEl = document.getElementById('status');
 const logEl = document.getElementById('log');
 
@@ -67,6 +68,7 @@ function selectProfile(profile, card) {
   
   btnConnect.disabled = false;
   btnFlash.disabled = true; // Reset przycisku wgrywania przy zmianie profilu
+  btnErase.disabled = true;
   setStatus(`Wybrano profil: ${profile.label}. Podłącz płytkę i kliknij Połącz.`);
   log(`Wybrano profil: ${profile.label} (wymagany chip: ${profile.chip})`);
 }
@@ -76,6 +78,7 @@ btnConnect.addEventListener('click', async () => {
   if (!selectedProfile) return;
 
   btnConnect.disabled = true;
+  btnErase.disabled = true;
   setStatus('Łączenie z płytką...');
 
   try {
@@ -114,10 +117,12 @@ btnConnect.addEventListener('click', async () => {
     log('Weryfikacja chipu zakończona pomyślnie.');
     setStatus('Połączono pomyślnie. Możesz wgrać firmware.', false);
     btnFlash.disabled = false;
+    btnErase.disabled = !loader || !transport;
 
   } catch (e) {
     btnConnect.disabled = false;
     btnFlash.disabled = true;
+    btnErase.disabled = true;
     await disconnect();
 
     if (e.name === 'NotFoundError' || e.message.includes('No port selected')) {
@@ -134,6 +139,7 @@ btnConnect.addEventListener('click', async () => {
 btnFlash.addEventListener('click', async () => {
   btnConnect.disabled = true;
   btnFlash.disabled = true;
+  btnErase.disabled = true;
   setStatus('Pobieranie firmware...');
 
   try {
@@ -169,7 +175,39 @@ btnFlash.addEventListener('click', async () => {
     log(`Błąd wgrywania: ${e.message}`);
     setStatus(`Błąd: ${e.message}`, true);
     btnConnect.disabled = false;
-    btnFlash.disabled = false;
+    btnFlash.disabled = !loader || !transport;
+    btnErase.disabled = !loader || !transport;
+  }
+});
+
+// --- Logika pełnego kasowania pamięci ---
+btnErase.addEventListener('click', async () => {
+  if (!loader || !transport) {
+    btnErase.disabled = true;
+    return;
+  }
+
+  btnConnect.disabled = true;
+  btnFlash.disabled = true;
+  btnErase.disabled = true;
+  setStatus('Kasowanie pamięci...');
+
+  try {
+    await loader.eraseFlash();
+    await loader.after();
+    await disconnect();
+
+    setStatus('Pamięć wyczyszczona pomyślnie!', false);
+    log('Pamięć flash wyczyszczona pomyślnie.');
+    btnConnect.disabled = true;
+    btnFlash.disabled = true;
+    btnErase.disabled = true;
+  } catch (e) {
+    log(`Błąd kasowania pamięci: ${e.message}`);
+    setStatus(`Błąd: ${e.message}`, true);
+    btnConnect.disabled = false;
+    btnFlash.disabled = !loader || !transport;
+    btnErase.disabled = !loader || !transport;
   }
 });
 
@@ -179,11 +217,12 @@ async function disconnect() {
     if (transport) {
       await transport.disconnect();
     }
+  } catch (e) {
+    console.error('Błąd podczas rozłączania:', e);
+  } finally {
     port = null;
     transport = null;
     loader = null;
-  } catch (e) {
-    console.error('Błąd podczas rozłączania:', e);
   }
 }
 

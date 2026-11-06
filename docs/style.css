@@ -221,13 +221,13 @@ h2 {
 
 button {
     min-height: 44px;
-    padding: 0.65rem 1.15rem;
+    padding: 10px 15px;
     border: 1px solid var(--line);
     border-radius: 8px;
     background: var(--panel-2);
     color: var(--text);
     font: inherit;
-    font-size: 0.9rem;
+    font-size: 13px;
     font-weight: 650;
     cursor: pointer;
     transition: border-color 0.18s, background 0.18s, color 0.18s;
@@ -263,6 +263,17 @@ button:disabled {
 #btn-flash:not(:disabled):hover {
     border-color: var(--cyan-hover);
     background: var(--cyan-hover);
+}
+
+.btn-danger {
+    border-color: var(--text);
+    background: #521b24;
+    color: #fff;
+}
+
+.btn-danger:not(:disabled):hover {
+    border-color: #fff;
+    background: #742633;
 }
 
 .status {
