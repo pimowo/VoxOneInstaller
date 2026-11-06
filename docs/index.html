@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VoxOne Installer</title>
-  <link rel="stylesheet" href="./style.css?v=3" />
+  <link rel="stylesheet" href="./style.css?v=4" />
 </head>
 
 <body>
@@ -25,31 +25,52 @@
     </header>
 
     <nav class="tabs" aria-label="Główna nawigacja">
-      <a href="#installer" aria-current="page">Instalator</a>
-      <a href="#instruction">Instrukcja</a>
-      <a href="#info">Info</a>
+      <a href="#tab-installer" data-tab-target="tab-installer" aria-current="page">Instalator</a>
+      <a href="#tab-instruction" data-tab-target="tab-instruction">Instrukcja</a>
+      <a href="#tab-info" data-tab-target="tab-info">Info</a>
     </nav>
 
-    <main id="installer">
-      <section id="profiles-section">
-        <h2>1. Wybierz płytkę</h2>
-        <div id="profiles"></div>
-      </section>
+    <main>
+      <div id="tab-installer" class="tab-panel installer-grid">
+        <section id="profiles-section">
+          <h2>1. Wybierz płytkę</h2>
+          <div id="profiles"></div>
+        </section>
 
-      <section id="actions-section">
-        <h2>2. Podłącz i wgraj</h2>
-        <div class="buttons">
-          <button id="btn-connect" disabled>Połącz</button>
-          <button id="btn-flash" disabled>Wgraj firmware</button>
-          <button id="btn-erase" class="btn-danger" disabled>Wyczyść pamięć (Full Erase)</button>
-        </div>
-        <p id="status" class="status">Wybierz profil z listy powyżej.</p>
-      </section>
+        <section id="actions-section">
+          <h2>2. Podłącz i wgraj</h2>
+          <div class="buttons">
+            <button id="btn-connect" disabled>Połącz</button>
+            <button id="btn-flash" disabled>Wgraj firmware</button>
+            <button id="btn-erase" class="btn-danger" disabled>Wyczyść pamięć (Full Erase)</button>
+          </div>
+          <p id="status" class="status">Wybierz profil z listy powyżej.</p>
+        </section>
 
-      <section id="log-section">
-        <h2>Log</h2>
-        <pre id="log"></pre>
-      </section>
+        <section id="log-section">
+          <h2>Log</h2>
+          <pre id="log"></pre>
+        </section>
+      </div>
+
+      <div id="tab-instruction" class="tab-panel content-card" hidden>
+        <h2>Instrukcja krok po kroku</h2>
+        <ol class="instruction-list">
+          <li>Podłącz płytkę kablem USB do komputera.</li>
+          <li>Wybierz odpowiedni profil płytki na zakładce Instalator.</li>
+          <li>Kliknij „Połącz” i wybierz port COM.</li>
+          <li>Jeśli pojawi się błąd połączenia, przytrzymaj przycisk BOOT na płytce, kliknij „Połącz” i puść BOOT.</li>
+          <li>Kliknij „Wgraj firmware” i poczekaj na zakończenie.</li>
+          <li>Po zakończeniu odłącz płytkę i podłącz ją ponownie do zasilania.</li>
+        </ol>
+      </div>
+
+      <div id="tab-info" class="tab-panel content-card" hidden>
+        <h2>O projekcie VoxOne</h2>
+        <p>VoxOne to firmware radia sieciowego dla klasycznego ESP32 i ESP32-S3. Projekt rozwija bazę yoRadio, zachowując jej atrybucję i zgodność tam, gdzie jest ona nadal częścią działającego kodu.</p>
+        <p class="info-version">Wersja instalatora: 1.0.0</p>
+        <a class="project-link" href="https://github.com/pimowo/VoxOne" target="_blank" rel="noopener noreferrer">Repozytorium VoxOne na GitHubie</a>
+      </div>
     </main>
 
     <footer class="site-footer">
@@ -58,7 +79,7 @@
     </footer>
   </div>
 
-  <script type="module" src="./app.js?v=3"></script>
+  <script type="module" src="./app.js?v=4"></script>
 </body>
 
 </html>

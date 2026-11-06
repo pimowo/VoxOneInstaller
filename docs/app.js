@@ -14,6 +14,8 @@ const btnFlash = document.getElementById('btn-flash');
 const btnErase = document.getElementById('btn-erase');
 const statusEl = document.getElementById('status');
 const logEl = document.getElementById('log');
+const tabLinks = document.querySelectorAll('.tabs [data-tab-target]');
+const tabPanels = document.querySelectorAll('.tab-panel');
 
 // --- Funkcje pomocnicze ---
 const log = (msg) => {
@@ -26,6 +28,43 @@ const setStatus = (text, isError = false) => {
   statusEl.textContent = text;
   statusEl.style.color = isError ? 'var(--red)' : 'var(--yellow)';
 };
+
+// --- Nawigacja zakładek ---
+function activateTab(targetId) {
+  const targetPanel = document.getElementById(targetId);
+  if (!targetPanel) return;
+
+  tabPanels.forEach(panel => {
+    panel.hidden = panel !== targetPanel;
+  });
+
+  tabLinks.forEach(link => {
+    if (link.dataset.tabTarget === targetId) {
+      link.setAttribute('aria-current', 'page');
+    } else {
+      link.removeAttribute('aria-current');
+    }
+  });
+}
+
+function requestedTabId() {
+  const targetId = window.location.hash.slice(1);
+  return Array.from(tabPanels).some(panel => panel.id === targetId) ? targetId : 'tab-installer';
+}
+
+tabLinks.forEach(link => {
+  link.addEventListener('click', event => {
+    event.preventDefault();
+    const targetId = link.dataset.tabTarget;
+    activateTab(targetId);
+    if (window.location.hash !== `#${targetId}`) {
+      window.history.pushState(null, '', `#${targetId}`);
+    }
+  });
+});
+
+window.addEventListener('popstate', () => activateTab(requestedTabId()));
+activateTab(requestedTabId());
 
 // --- Inicjalizacja ---
 async function init() {

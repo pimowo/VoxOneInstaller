@@ -143,13 +143,14 @@ p {
     outline-offset: 3px;
 }
 
-main {
+.installer-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
 }
 
-main > section {
+.installer-grid > section,
+.content-card {
     min-width: 0;
     padding: 1.5rem;
     border: 1px solid var(--line);
@@ -159,6 +160,10 @@ main > section {
 
 #log-section {
     grid-column: 1 / -1;
+}
+
+[hidden] {
+    display: none !important;
 }
 
 h2 {
@@ -298,6 +303,58 @@ button:disabled {
     white-space: pre-wrap;
 }
 
+.content-card p {
+    max-width: 76ch;
+    margin-bottom: 1rem;
+    color: var(--muted);
+    line-height: 1.65;
+}
+
+.instruction-list {
+    margin: 0;
+    padding-left: 1.6rem;
+    color: var(--text);
+}
+
+.instruction-list li {
+    padding-left: 0.35rem;
+    line-height: 1.6;
+}
+
+.instruction-list li + li {
+    margin-top: 0.75rem;
+}
+
+.instruction-list li::marker {
+    color: var(--cyan);
+    font-weight: 750;
+}
+
+.info-version {
+    width: fit-content;
+    padding: 7px 11px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel-2);
+    color: var(--text) !important;
+    font-weight: 650;
+}
+
+.project-link {
+    color: var(--cyan);
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.project-link:hover {
+    text-decoration: underline;
+}
+
+.project-link:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 3px;
+}
+
 footer {
     margin-top: 28px;
     padding: 14px 0 22px;
@@ -339,7 +396,7 @@ footer {
         font-size: 12px;
     }
 
-    main {
+    .installer-grid {
         grid-template-columns: 1fr;
     }
 
@@ -349,7 +406,8 @@ footer {
 }
 
 @media (max-width: 480px) {
-    main > section {
+    .installer-grid > section,
+    .content-card {
         padding: 1.25rem;
     }
 
