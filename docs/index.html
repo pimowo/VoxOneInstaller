@@ -5,21 +5,32 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VoxOne Installer</title>
-  <link rel="stylesheet" href="./style.css?v=2" />
+  <link rel="stylesheet" href="./style.css?v=3" />
 </head>
 
 <body>
   <div class="shell">
     <header class="topbar">
-      <img class="logo" src="./assets/logo.svg" alt="VoxOne" width="207" height="50" />
-      <div class="header-copy">
-        <p class="eyebrow">INSTALATOR FIRMWARE</p>
-        <h1>VoxOne Installer</h1>
-        <p class="subtitle">Wybierz płytkę, podłącz ją przez USB i kliknij Połącz.</p>
+      <div class="brand">
+        <div>
+          <p class="eyebrow">INSTALATOR FIRMWARE</p>
+          <img class="brand-logo" src="./assets/logo.svg" alt="VoxOne" width="207" height="50" />
+        </div>
+      </div>
+      <div class="identity">
+        <div class="identity-badges">
+          <div class="badge">Wersja 1.0.0</div>
+        </div>
       </div>
     </header>
 
-    <main>
+    <nav class="tabs" aria-label="Główna nawigacja">
+      <a href="#installer" aria-current="page">Instalator</a>
+      <a href="#instruction">Instrukcja</a>
+      <a href="#info">Info</a>
+    </nav>
+
+    <main id="installer">
       <section id="profiles-section">
         <h2>1. Wybierz płytkę</h2>
         <div id="profiles"></div>
@@ -39,6 +50,11 @@
         <pre id="log"></pre>
       </section>
     </main>
+
+    <footer class="site-footer">
+      <span>VoxOne © 2026 PMW</span>
+      <a href="mailto:pmw.voxone@gmail.com">Support: pmw.voxone@gmail.com</a>
+    </footer>
   </div>
 
   <script type="module" src="./app.js?v=2"></script>
