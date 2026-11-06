@@ -13,6 +13,7 @@
     --cyan-dark: #163649;
     --cyan-hover: #4adeeb;
     --red: #ff6874;
+    --green: #43d39a;
     --yellow: #f3ca57;
     --terminal: #050a0f;
     --terminal-line: #203548;
@@ -301,6 +302,31 @@ button:disabled {
     color: var(--text);
     font: 0.85rem/1.65 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
     white-space: pre-wrap;
+}
+
+#log > div {
+    min-height: 1.4em;
+    overflow-wrap: anywhere;
+}
+
+#log > div + div {
+    margin-top: 0.15rem;
+}
+
+.log-error {
+    color: var(--red);
+}
+
+.log-success {
+    color: var(--green);
+}
+
+.log-progress {
+    color: var(--cyan);
+}
+
+.log-info {
+    color: var(--text);
 }
 
 .content-card p {

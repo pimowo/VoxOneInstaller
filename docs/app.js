@@ -18,9 +18,18 @@ const tabLinks = document.querySelectorAll('.tabs [data-tab-target]');
 const tabPanels = document.querySelectorAll('.tab-panel');
 
 // --- Funkcje pomocnicze ---
-const log = (msg) => {
+const log = (msg, type = 'info') => {
   console.log(msg);
-  logEl.textContent += `${msg}\n`;
+  const classByType = {
+    error: 'log-error',
+    success: 'log-success',
+    progress: 'log-progress',
+    info: 'log-info',
+  };
+  const entry = document.createElement('div');
+  entry.className = classByType[type] || classByType.info;
+  entry.textContent = msg;
+  logEl.appendChild(entry);
   logEl.scrollTop = logEl.scrollHeight;
 };
 
@@ -69,7 +78,7 @@ activateTab(requestedTabId());
 // --- Inicjalizacja ---
 async function init() {
   if (!('serial' in navigator)) {
-    log('BŁĄD: Web Serial nie jest dostępny. Użyj Chrome/Edge.');
+    log('BŁĄD: Web Serial nie jest dostępny. Użyj Chrome/Edge.', 'error');
     setStatus('Twoja przeglądarka nie wspiera Web Serial.', true);
     return;
   }
@@ -78,9 +87,9 @@ async function init() {
     const res = await fetch('./profiles.json');
     manifest = await res.json();
     renderProfiles(manifest.profiles);
-    log(`Wczytano manifest: ${manifest.profiles.length} profili.`);
+    log(`Wczytano manifest: ${manifest.profiles.length} profili.`, 'info');
   } catch (e) {
-    log(`Błąd wczytywania manifestu: ${e.message}`);
+    log(`Błąd wczytywania manifestu: ${e.message}`, 'error');
     setStatus('Nie udało się wczytać listy profili.', true);
   }
 }
@@ -109,7 +118,7 @@ function selectProfile(profile, card) {
   btnFlash.disabled = true; // Reset przycisku wgrywania przy zmianie profilu
   btnErase.disabled = true;
   setStatus(`Wybrano profil: ${profile.label}. Podłącz płytkę i kliknij Połącz.`);
-  log(`Wybrano profil: ${profile.label} (wymagany chip: ${profile.chip})`);
+  log(`Wybrano profil: ${profile.label} (wymagany chip: ${profile.chip})`, 'info');
 }
 
 // --- Logika połączenia ---
@@ -131,18 +140,18 @@ btnConnect.addEventListener('click', async () => {
       baudrate: 921600,
       terminal: {
         clean: () => {},
-        writeLine: (data) => log(data),
-        write: (data) => log(data),
+        writeLine: (data) => log(data, 'progress'),
+        write: (data) => log(data, 'progress'),
       },
     });
 
     // 3. Próba połączenia (reset do bootloadera i synchronizacja)
-    log('Resetowanie i łączenie z bootloaderem...');
+    log('Resetowanie i łączenie z bootloaderem...', 'progress');
     await loader.main();
 
     // 4. Weryfikacja chipu
     const detectedChip = loader.chip.CHIP_NAME.toLowerCase(); // np. "esp32-s3"
-    log(`Wykryto układ: ${detectedChip}`);
+    log(`Wykryto układ: ${detectedChip}`, 'info');
 
     // Prosta weryfikacja (usuwamy myślniki, żeby "esp32-s3" pasowało do "esp32s3")
     const expectedChip = selectedProfile.chip.toLowerCase().replace('-', '');
@@ -153,7 +162,7 @@ btnConnect.addEventListener('click', async () => {
     }
 
     // Sukces
-    log('Weryfikacja chipu zakończona pomyślnie.');
+    log('Weryfikacja chipu zakończona pomyślnie.', 'success');
     setStatus('Połączono pomyślnie. Możesz wgrać firmware.', false);
     btnFlash.disabled = false;
     btnErase.disabled = !loader || !transport;
@@ -166,9 +175,9 @@ btnConnect.addEventListener('click', async () => {
 
     if (e.name === 'NotFoundError' || e.message.includes('No port selected')) {
       setStatus('Anulowano wybór portu. Upewnij się, że płytka jest podłączona i spróbuj ponownie.', false);
-      log('Anulowano okno wyboru portu.');
+      log('Anulowano okno wyboru portu.', 'info');
     } else {
-      log(`Błąd połączenia: ${e.message}`);
+      log(`Błąd połączenia: ${e.message}`, 'error');
       setStatus(`Błąd: ${e.message}`, true);
     }
   }
@@ -208,10 +217,10 @@ btnFlash.addEventListener('click', async () => {
     await loader.after();
 
     setStatus('Wgrywanie zakończone sukcesem!', false);
-    log('Firmware wgrany pomyślnie.');
+    log('Firmware wgrany pomyślnie.', 'success');
     btnConnect.disabled = false;
   } catch (e) {
-    log(`Błąd wgrywania: ${e.message}`);
+    log(`Błąd wgrywania: ${e.message}`, 'error');
     setStatus(`Błąd: ${e.message}`, true);
     btnConnect.disabled = false;
     btnFlash.disabled = !loader || !transport;
@@ -237,12 +246,12 @@ btnErase.addEventListener('click', async () => {
     await disconnect();
 
     setStatus('Pamięć wyczyszczona pomyślnie!', false);
-    log('Pamięć flash wyczyszczona pomyślnie.');
+    log('Pamięć flash wyczyszczona pomyślnie.', 'success');
     btnConnect.disabled = true;
     btnFlash.disabled = true;
     btnErase.disabled = true;
   } catch (e) {
-    log(`Błąd kasowania pamięci: ${e.message}`);
+    log(`Błąd kasowania pamięci: ${e.message}`, 'error');
     setStatus(`Błąd: ${e.message}`, true);
     btnConnect.disabled = false;
     btnFlash.disabled = !loader || !transport;
