@@ -192,7 +192,9 @@ function selectProfile(profile, card) {
 
   versionSelect.replaceChildren(...versions.map((version, index) => {
     const label = normalizeVersion(version.version);
-    return new Option(index === 0 ? `${label} (najnowsza)` : label, version.bin);
+    const option = new Option(index === 0 ? `${label} (najnowsza)` : label, version.bin);
+    option.dataset.offset = String(version.offset);
+    return option;
   }));
   versionSelect.selectedIndex = 0;
   versionSelect.disabled = false;
@@ -318,10 +320,16 @@ btnFlash.addEventListener('click', async () => {
   setStatus('Pobieranie firmware...');
 
   try {
-    const firmwareUrl = document.getElementById('version-select').value;
+    const selectedVersion = versionSelect.selectedOptions[0];
+    const firmwareUrl = selectedVersion?.value;
+    const flashOffset = Number(selectedVersion?.dataset.offset);
 
     if (!firmwareUrl) {
       throw new Error('Nie wybrano wersji firmware');
+    }
+
+    if (!Number.isSafeInteger(flashOffset) || flashOffset < 0) {
+      throw new Error('Wybrana wersja firmware nie ma prawidłowego adresu zapisu');
     }
 
     if (firmwareUrl.includes('example.com')) {
@@ -337,10 +345,11 @@ btnFlash.addEventListener('click', async () => {
     const binaryData = new Uint8Array(await res.arrayBuffer());
 
     setStatus('Wgrywanie firmware...');
+    log(`Wgrywanie obrazu od adresu 0x${flashOffset.toString(16)}.`, 'info');
     progressContainer.style.display = 'block';
     progressBar.style.width = '0%';
     await loader.writeFlash({
-      fileArray: [{ data: binaryData, address: 0x10000 }],
+      fileArray: [{ data: binaryData, address: flashOffset }],
       flashSize: 'keep',
       eraseAll: false,
       compress: true,
