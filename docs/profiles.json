@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "firmwareVersion": "0.0.0-dev",
+  "profiles": [
+    {
+      "id": "s0",
+      "label": "VoxOne S0 (ESP32-S3)",
+      "chip": "esp32s3",
+      "bin": "https://example.com/placeholder.bin"
+    }
+  ]
+}

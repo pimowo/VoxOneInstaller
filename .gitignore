@@ -1,0 +1,4 @@
+node_modules/
+.pio/
+*.log
+.DS_Store

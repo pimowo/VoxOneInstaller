@@ -1,0 +1,27 @@
+{
+  "name": "voxoneinstaller",
+  "version": "1.0.0",
+  "description": "VoxOne Installer – przeglądarkowy flasher firmware dla radia VoxOne",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pimowo/VoxOneInstaller.git"
+  },
+  "keywords": [],
+  "author": "pimowo",
+  "license": "MIT",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/pimowo/VoxOneInstaller/issues"
+  },
+  "homepage": "https://github.com/pimowo/VoxOneInstaller#readme",
+  "dependencies": {
+    "esptool-js": "^0.7.1"
+  }
+}
