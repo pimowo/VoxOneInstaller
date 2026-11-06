@@ -23,7 +23,7 @@ const log = (msg) => {
 
 const setStatus = (text, isError = false) => {
   statusEl.textContent = text;
-  statusEl.style.color = isError ? '#f44336' : '#ffb300';
+  statusEl.style.color = isError ? 'var(--red)' : 'var(--yellow)';
 };
 
 // --- Inicjalizacja ---
