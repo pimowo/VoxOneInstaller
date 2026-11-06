@@ -1,4 +1,4 @@
-import { ESPLoader, Transport } from './vendor/esptool-js.bundle.js';
+import { ESPLoader, Transport, UsbJtagSerialReset } from './vendor/esptool-js.bundle.js';
 
 // --- Stan aplikacji ---
 let manifest = null;
@@ -59,6 +59,35 @@ function resetVersionSelect(message = 'Najpierw wybierz profil') {
 function resetProgress() {
   progressContainer.style.display = 'none';
   progressBar.style.width = '0%';
+}
+
+const ESPRESSIF_USB_VID = 0x303a;
+const RESET_RETRY_ERROR = 'ResetRetryError';
+
+const wait = (milliseconds) => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+const isSetSignalsError = (error) =>
+  String(error?.message || error).toLowerCase().includes('setsignals');
+
+function createLoader(activeTransport, useUsbJtagReset) {
+  const options = {
+    transport: activeTransport,
+    baudrate: 921600,
+    terminal: {
+      clean: () => {},
+      writeLine: (data) => log(data, 'progress'),
+      write: (data) => log(data, 'progress'),
+    },
+  };
+
+  if (useUsbJtagReset) {
+    // Ta wersja esptool-js konfiguruje strategie resetu przez resetConstructors.
+    options.resetConstructors = {
+      usbJTAGSerialReset: selectedTransport => new UsbJtagSerialReset(selectedTransport),
+    };
+  }
+
+  return new ESPLoader(options);
 }
 
 // --- Nawigacja zakładek ---
@@ -197,20 +226,44 @@ btnConnect.addEventListener('click', async () => {
     port = await navigator.serial.requestPort();
     
     // 2. Inicjalizacja transportu i loadera
+    const portInfo = port.getInfo();
+    const useUsbJtagReset = portInfo.usbVendorId === ESPRESSIF_USB_VID;
+    const resetMode = useUsbJtagReset ? 'usb_reset' : 'default_reset';
+
     transport = new Transport(port, true);
-    loader = new ESPLoader({
-      transport,
-      baudrate: 921600,
-      terminal: {
-        clean: () => {},
-        writeLine: (data) => log(data, 'progress'),
-        write: (data) => log(data, 'progress'),
-      },
-    });
+    loader = createLoader(transport, useUsbJtagReset);
 
     // 3. Próba połączenia (reset do bootloadera i synchronizacja)
+    if (useUsbJtagReset) {
+      log('Wykryto natywne USB Espressif. Używam strategii USB-Serial-JTAG.', 'info');
+    }
     log('Resetowanie i łączenie z bootloaderem...', 'progress');
-    await loader.main();
+    try {
+      await loader.main(resetMode);
+    } catch (error) {
+      if (!isSetSignalsError(error)) throw error;
+
+      const resetMessage = 'Błąd resetowania układu. Spróbuj przytrzymać przycisk BOOT na płytce podczas łączenia.';
+      setStatus(resetMessage, true);
+      log(resetMessage, 'error');
+      log('Ponawiam połączenie za 500 ms bez automatycznego resetu...', 'progress');
+      await wait(500);
+
+      try {
+        if (port?.readable || port?.writable) {
+          await transport.disconnect();
+        }
+
+        // Ponowne użycie wybranego portu nie otwiera drugi raz okna requestPort().
+        transport = new Transport(port, true);
+        loader = createLoader(transport, useUsbJtagReset);
+        await loader.main('no_reset');
+      } catch (retryError) {
+        const finalError = new Error(`${resetMessage} Ponowna próba nie powiodła się: ${retryError.message}`);
+        finalError.name = RESET_RETRY_ERROR;
+        throw finalError;
+      }
+    }
 
     // 4. Weryfikacja chipu
     const detectedChip = loader.chip.CHIP_NAME.toLowerCase(); // np. "esp32-s3"
@@ -241,12 +294,16 @@ btnConnect.addEventListener('click', async () => {
       connectionState = 'idle';
     }
 
-    btnConnect.disabled = false;
-
-    if (e.name === 'NotFoundError' || e.message.includes('No port selected')) {
+    if (e.name === RESET_RETRY_ERROR) {
+      btnConnect.disabled = true;
+      log(`Błąd połączenia: ${e.message}`, 'error');
+      setStatus(e.message, true);
+    } else if (e.name === 'NotFoundError' || e.message.includes('No port selected')) {
+      btnConnect.disabled = false;
       setStatus('Anulowano wybór portu. Upewnij się, że płytka jest podłączona i spróbuj ponownie.', false);
       log('Anulowano okno wyboru portu.', 'info');
     } else {
+      btnConnect.disabled = false;
       log(`Błąd połączenia: ${e.message}`, 'error');
       setStatus(`Błąd: ${e.message}`, true);
     }
