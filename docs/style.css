@@ -1,4 +1,125 @@
-:root { font-family: system-ui, sans-serif; background: #111; color: #eee; }
-body { max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
-#profiles { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
-#log { background: #000; padding: 1rem; overflow: auto; max-height: 300px; font-size: 0.85rem; }
+:root {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #121212;
+    color: #e0e0e0;
+    line-height: 1.5;
+}
+
+body {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+h1 {
+    margin-bottom: 0.5rem;
+    color: #fff;
+}
+
+h2 {
+    margin-top: 2rem;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #333;
+    padding-bottom: 0.5rem;
+}
+
+p {
+    color: #aaa;
+}
+
+#profiles {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    margin-top: 1rem;
+}
+
+.profile-card {
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #1e1e1e;
+}
+
+.profile-card:hover {
+    border-color: #555;
+    background: #252525;
+}
+
+.profile-card.selected {
+    border-color: #4caf50;
+    background: #1b2e1b;
+}
+
+.profile-card h3 {
+    margin: 0 0 0.5rem 0;
+    color: #fff;
+}
+
+.profile-card p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #333;
+    color: #fff;
+    transition: background 0.2s;
+}
+
+button:not(:disabled):hover {
+    background: #444;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#btn-connect:not(:disabled) {
+    background: #1976d2;
+}
+
+#btn-connect:not(:disabled):hover {
+    background: #1565c0;
+}
+
+#btn-flash:not(:disabled) {
+    background: #388e3c;
+}
+
+#btn-flash:not(:disabled):hover {
+    background: #2e7d32;
+}
+
+.status {
+    margin-top: 1rem;
+    font-weight: bold;
+    color: #ffb300;
+}
+
+#log {
+    background: #000;
+    padding: 1rem;
+    border-radius: 6px;
+    overflow: auto;
+    max-height: 300px;
+    font-size: 0.85rem;
+    font-family: monospace;
+    white-space: pre-wrap;
+    border: 1px solid #333;
+}

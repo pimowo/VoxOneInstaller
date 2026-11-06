@@ -1,18 +1,41 @@
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VoxOne Installer</title>
   <link rel="stylesheet" href="./style.css" />
 </head>
+
 <body>
   <header>
     <h1>VoxOne Installer</h1>
-    <p>Wybierz płytkę i wgraj firmware.</p>
+    <p>Wybierz płytkę, podłącz ją przez USB i kliknij Połącz.</p>
   </header>
-  <main id="profiles"></main>
-  <pre id="log"></pre>
+
+  <main>
+    <section id="profiles-section">
+      <h2>1. Wybierz płytkę</h2>
+      <div id="profiles"></div>
+    </section>
+
+    <section id="actions-section">
+      <h2>2. Podłącz i wgraj</h2>
+      <div class="buttons">
+        <button id="btn-connect" disabled>Połącz</button>
+        <button id="btn-flash" disabled>Wgraj firmware</button>
+      </div>
+      <p id="status" class="status">Wybierz profil z listy powyżej.</p>
+    </section>
+
+    <section id="log-section">
+      <h2>Log</h2>
+      <pre id="log"></pre>
+    </section>
+  </main>
+
   <script type="module" src="./app.js"></script>
 </body>
+
 </html>

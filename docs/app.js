@@ -1,21 +1,142 @@
 import { ESPLoader, Transport } from './vendor/esptool-js.bundle.js';
 
+// --- Stan aplikacji ---
+let manifest = null;
+let selectedProfile = null;
+let port = null;
+let transport = null;
+let loader = null;
+
+// --- Elementy DOM ---
+const profilesEl = document.getElementById('profiles');
+const btnConnect = document.getElementById('btn-connect');
+const btnFlash = document.getElementById('btn-flash');
+const statusEl = document.getElementById('status');
 const logEl = document.getElementById('log');
-const log = (msg) => { console.log(msg); logEl.textContent += `${msg}\n`; };
 
-if (!('serial' in navigator)) {
-  log('Web Serial nie jest dostępny. Otwórz w Chrome/Edge na laptopie przez http://localhost:5500');
-} else {
-  log('Web Serial dostępny.');
+// --- Funkcje pomocnicze ---
+const log = (msg) => {
+  console.log(msg);
+  logEl.textContent += `${msg}\n`;
+  logEl.scrollTop = logEl.scrollHeight;
+};
+
+const setStatus = (text, isError = false) => {
+  statusEl.textContent = text;
+  statusEl.style.color = isError ? '#f44336' : '#ffb300';
+};
+
+// --- Inicjalizacja ---
+async function init() {
+  if (!('serial' in navigator)) {
+    log('BŁĄD: Web Serial nie jest dostępny. Użyj Chrome/Edge.');
+    setStatus('Twoja przeglądarka nie wspiera Web Serial.', true);
+    return;
+  }
+
+  try {
+    const res = await fetch('./profiles.json');
+    manifest = await res.json();
+    renderProfiles(manifest.profiles);
+    log(`Wczytano manifest: ${manifest.profiles.length} profili.`);
+  } catch (e) {
+    log(`Błąd wczytywania manifestu: ${e.message}`);
+    setStatus('Nie udało się wczytać listy profili.', true);
+  }
 }
 
-try {
-  const res = await fetch('./profiles.json');
-  const manifest = await res.json();
-  log(`Wczytano manifest: ${manifest.profiles?.length ?? 0} profili`);
-} catch (e) {
-  log(`Błąd wczytywania manifestu: ${e.message}`);
+// --- Renderowanie profili ---
+function renderProfiles(profiles) {
+  profilesEl.innerHTML = '';
+  profiles.forEach(profile => {
+    const card = document.createElement('div');
+    card.className = 'profile-card';
+    card.innerHTML = `
+      <h3>${profile.label}</h3>
+      <p>Chip: ${profile.chip}</p>
+    `;
+    card.addEventListener('click', () => selectProfile(profile, card));
+    profilesEl.appendChild(card);
+  });
 }
 
-log(`ESPLoader: ${typeof ESPLoader}`);
-log(`Transport: ${typeof Transport}`);
+function selectProfile(profile, card) {
+  document.querySelectorAll('.profile-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  selectedProfile = profile;
+  
+  btnConnect.disabled = false;
+  btnFlash.disabled = true; // Reset przycisku wgrywania przy zmianie profilu
+  setStatus(`Wybrano profil: ${profile.label}. Podłącz płytkę i kliknij Połącz.`);
+  log(`Wybrano profil: ${profile.label} (wymagany chip: ${profile.chip})`);
+}
+
+// --- Logika połączenia ---
+btnConnect.addEventListener('click', async () => {
+  if (!selectedProfile) return;
+
+  btnConnect.disabled = true;
+  setStatus('Łączenie z płytką...');
+
+  try {
+    // 1. Wybór portu (okno systemowe)
+    port = await navigator.serial.requestPort();
+    
+    // 2. Inicjalizacja transportu i loadera
+    transport = new Transport(port, true);
+    loader = new ESPLoader({
+      transport,
+      baudrate: 921600,
+      terminal: {
+        clean: () => {},
+        writeLine: (data) => log(data),
+        write: (data) => log(data),
+      },
+    });
+
+    // 3. Próba połączenia (reset do bootloadera i synchronizacja)
+    log('Resetowanie i łączenie z bootloaderem...');
+    await loader.main();
+
+    // 4. Weryfikacja chipu
+    const detectedChip = loader.chip.CHIP_NAME.toLowerCase(); // np. "esp32-s3"
+    log(`Wykryto układ: ${detectedChip}`);
+
+    // Prosta weryfikacja (usuwamy myślniki, żeby "esp32-s3" pasowało do "esp32s3")
+    const expectedChip = selectedProfile.chip.toLowerCase().replace('-', '');
+    const actualChip = detectedChip.replace('-', '');
+
+    if (actualChip !== expectedChip) {
+      throw new Error(`Niezgodność chipu! Wybrano profil dla ${selectedProfile.chip}, a wykryto ${detectedChip}.`);
+    }
+
+    // Sukces
+    log('Weryfikacja chipu zakończona pomyślnie.');
+    setStatus('Połączono pomyślnie. Możesz wgrać firmware.', false);
+    btnFlash.disabled = false;
+
+  } catch (e) {
+    log(`Błąd połączenia: ${e.message}`);
+    setStatus(`Błąd: ${e.message}`, true);
+    btnConnect.disabled = false;
+    btnFlash.disabled = true;
+    await disconnect(); // Sprzątanie po błędzie
+  }
+});
+
+// --- Funkcja rozłączania ---
+async function disconnect() {
+  try {
+    if (transport) {
+      await transport.disconnect();
+    }
+    port = null;
+    transport = null;
+    loader = null;
+  } catch (e) {
+    console.error('Błąd podczas rozłączania:', e);
+  }
+}
+
+// Start
+init();
