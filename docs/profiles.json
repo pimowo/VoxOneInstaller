@@ -4,7 +4,7 @@
   "profiles": [
     {
       "id": "s0",
-      "label": "VoxOne S0 (ESP32-S3)",
+      "label": "PCB S0",
       "chip": "esp32s3",
       "versions": [
         {
@@ -19,7 +19,7 @@
     },
     {
       "id": "l0",
-      "label": "VoxOne L0 (ESP32-S3)",
+      "label": "PCB L0",
       "chip": "esp32s3",
       "versions": [
         {
@@ -30,7 +30,7 @@
     },
     {
       "id": "m0",
-      "label": "VoxOne M0 (ESP32-S3)",
+      "label": "PCB M0",
       "chip": "esp32s3",
       "versions": [
         {
@@ -45,7 +45,7 @@
     },
     {
       "id": "w0",
-      "label": "VoxOne W0 (ESP32)",
+      "label": "PCB W0",
       "chip": "esp32",
       "versions": [
         {
@@ -60,7 +60,7 @@
     },
     {
       "id": "din0",
-      "label": "VoxOne DIN0 (ESP32-S3)",
+      "label": "PCB DIN0",
       "chip": "esp32s3",
       "versions": [
         {

@@ -266,6 +266,8 @@ h2 {
 
 .buttons {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
     flex-wrap: wrap;
     gap: 0.75rem;
 }
@@ -322,6 +324,12 @@ button:disabled {
     color: #fff;
 }
 
+#btn-erase {
+    min-height: 44px;
+    margin-left: auto;
+    padding: 10px 15px;
+}
+
 .btn-danger:not(:disabled):hover {
     border-color: #fff;
     background: #742633;
@@ -333,6 +341,23 @@ button:disabled {
     color: var(--yellow);
     font-size: 0.9rem;
     font-weight: 700;
+}
+
+.progress-container {
+    display: none;
+    height: 8px;
+    margin-top: 10px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #1e2f42;
+}
+
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: #00b4d8;
+    transition: width 0.1s ease;
 }
 
 #log {

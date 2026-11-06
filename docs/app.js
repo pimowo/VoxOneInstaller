@@ -6,6 +6,8 @@ let selectedProfile = null;
 let port = null;
 let transport = null;
 let loader = null;
+let connectionState = 'idle';
+let disconnectPromise = null;
 
 // --- Elementy DOM ---
 const profilesEl = document.getElementById('profiles');
@@ -14,6 +16,8 @@ const btnFlash = document.getElementById('btn-flash');
 const btnErase = document.getElementById('btn-erase');
 const versionSelect = document.getElementById('version-select');
 const statusEl = document.getElementById('status');
+const progressContainer = document.querySelector('.progress-container');
+const progressBar = document.getElementById('progress-bar');
 const logEl = document.getElementById('log');
 const tabLinks = document.querySelectorAll('.tabs [data-tab-target]');
 const tabPanels = document.querySelectorAll('.tab-panel');
@@ -50,6 +54,11 @@ const compareFirmwareVersions = (a, b) => {
 function resetVersionSelect(message = 'Najpierw wybierz profil') {
   versionSelect.replaceChildren(new Option(message, ''));
   versionSelect.disabled = true;
+}
+
+function resetProgress() {
+  progressContainer.style.display = 'none';
+  progressBar.style.width = '0%';
 }
 
 // --- Nawigacja zakładek ---
@@ -92,6 +101,7 @@ activateTab(requestedTabId());
 // --- Inicjalizacja ---
 async function init() {
   resetVersionSelect();
+  resetProgress();
 
   if (!('serial' in navigator)) {
     log('BŁĄD: Web Serial nie jest dostępny. Użyj Chrome/Edge.', 'error');
@@ -120,7 +130,6 @@ function renderProfiles(profiles) {
     card.className = 'profile-card';
     card.innerHTML = `
       <h3>${profile.label}</h3>
-      <p>Chip: ${profile.chip}</p>
     `;
     card.addEventListener('click', () => selectProfile(profile, card));
     profilesEl.appendChild(card);
@@ -128,6 +137,12 @@ function renderProfiles(profiles) {
 }
 
 function selectProfile(profile, card) {
+  if (connectionState !== 'idle') {
+    setStatus('Połączenie jest aktywne. Zakończ bieżącą operację przed zmianą profilu.', true);
+    log('Próba zmiany profilu przy aktywnym połączeniu została zablokowana.', 'error');
+    return;
+  }
+
   document.querySelectorAll('.profile-card').forEach(c => c.classList.remove('selected'));
   card.classList.add('selected');
   selectedProfile = profile;
@@ -164,7 +179,16 @@ function selectProfile(profile, card) {
 btnConnect.addEventListener('click', async () => {
   if (!selectedProfile) return;
 
+  if (connectionState !== 'idle' || port || transport || loader) {
+    btnConnect.disabled = true;
+    setStatus('Połączenie z płytką jest już aktywne.', false);
+    log('Pominięto ponowną próbę otwarcia aktywnego portu.', 'info');
+    return;
+  }
+
+  connectionState = 'connecting';
   btnConnect.disabled = true;
+  btnFlash.disabled = true;
   btnErase.disabled = true;
   setStatus('Łączenie z płytką...');
 
@@ -201,16 +225,23 @@ btnConnect.addEventListener('click', async () => {
     }
 
     // Sukces
+    connectionState = 'connected';
     log('Weryfikacja chipu zakończona pomyślnie.', 'success');
     setStatus('Połączono pomyślnie. Możesz wgrać firmware.', false);
     btnFlash.disabled = false;
     btnErase.disabled = !loader || !transport;
 
   } catch (e) {
-    btnConnect.disabled = false;
     btnFlash.disabled = true;
     btnErase.disabled = true;
-    await disconnect();
+
+    if (port || transport || loader) {
+      await disconnect();
+    } else {
+      connectionState = 'idle';
+    }
+
+    btnConnect.disabled = false;
 
     if (e.name === 'NotFoundError' || e.message.includes('No port selected')) {
       setStatus('Anulowano wybór portu. Upewnij się, że płytka jest podłączona i spróbuj ponownie.', false);
@@ -249,27 +280,36 @@ btnFlash.addEventListener('click', async () => {
     const binaryData = new Uint8Array(await res.arrayBuffer());
 
     setStatus('Wgrywanie firmware...');
+    progressContainer.style.display = 'block';
+    progressBar.style.width = '0%';
     await loader.writeFlash({
       fileArray: [{ data: binaryData, address: 0x10000 }],
       flashSize: 'keep',
       eraseAll: false,
       compress: true,
       reportProgress: (fileIndex, written, total) => {
-        setStatus(`Wgrywanie: ${Math.round((written / total) * 100)}%`);
+        const percent = total > 0 ? (written / total) * 100 : 0;
+        progressBar.style.width = `${percent}%`;
+        setStatus(`Wgrywanie: ${Math.round(percent)}%`);
       },
     });
 
     await loader.after();
+    await disconnect();
 
     setStatus('Wgrywanie zakończone sukcesem!', false);
     log('Firmware wgrany pomyślnie.', 'success');
     btnConnect.disabled = false;
+    btnFlash.disabled = true;
+    btnErase.disabled = true;
   } catch (e) {
     log(`Błąd wgrywania: ${e.message}`, 'error');
     setStatus(`Błąd: ${e.message}`, true);
-    btnConnect.disabled = false;
+    btnConnect.disabled = connectionState !== 'idle';
     btnFlash.disabled = !loader || !transport;
     btnErase.disabled = !loader || !transport;
+  } finally {
+    resetProgress();
   }
 });
 
@@ -298,7 +338,7 @@ btnErase.addEventListener('click', async () => {
   } catch (e) {
     log(`Błąd kasowania pamięci: ${e.message}`, 'error');
     setStatus(`Błąd: ${e.message}`, true);
-    btnConnect.disabled = false;
+    btnConnect.disabled = connectionState !== 'idle';
     btnFlash.disabled = !loader || !transport;
     btnErase.disabled = !loader || !transport;
   }
@@ -306,16 +346,36 @@ btnErase.addEventListener('click', async () => {
 
 // --- Funkcja rozłączania ---
 async function disconnect() {
-  try {
-    if (transport) {
-      await transport.disconnect();
+  if (disconnectPromise) {
+    return disconnectPromise;
+  }
+
+  const activePort = port;
+  const activeTransport = transport;
+  connectionState = 'disconnecting';
+
+  disconnectPromise = (async () => {
+    try {
+      const isOpen = Boolean(activePort?.readable || activePort?.writable);
+      if (activeTransport && isOpen) {
+        await activeTransport.disconnect();
+      } else if (activePort && isOpen) {
+        await activePort.close();
+      }
+    } catch (e) {
+      console.error('Błąd podczas rozłączania:', e);
+    } finally {
+      if (port === activePort) port = null;
+      if (transport === activeTransport) transport = null;
+      loader = null;
+      connectionState = 'idle';
     }
-  } catch (e) {
-    console.error('Błąd podczas rozłączania:', e);
+  })();
+
+  try {
+    await disconnectPromise;
   } finally {
-    port = null;
-    transport = null;
-    loader = null;
+    disconnectPromise = null;
   }
 }
 
