@@ -130,6 +130,49 @@ btnConnect.addEventListener('click', async () => {
   }
 });
 
+// --- Logika wgrywania firmware ---
+btnFlash.addEventListener('click', async () => {
+  btnConnect.disabled = true;
+  btnFlash.disabled = true;
+  setStatus('Pobieranie firmware...');
+
+  try {
+    if (selectedProfile.bin.includes('example.com')) {
+      throw new Error('Brak prawdziwego pliku firmware (placeholder)');
+    }
+
+    const res = await fetch(selectedProfile.bin);
+
+    if (!res.ok) {
+      throw new Error(`Nie udało się pobrać firmware (${res.status})`);
+    }
+
+    const binaryData = new Uint8Array(await res.arrayBuffer());
+
+    setStatus('Wgrywanie firmware...');
+    await loader.writeFlash({
+      fileArray: [{ data: binaryData, address: 0x10000 }],
+      flashSize: 'keep',
+      eraseAll: false,
+      compress: true,
+      reportProgress: (fileIndex, written, total) => {
+        setStatus(`Wgrywanie: ${Math.round((written / total) * 100)}%`);
+      },
+    });
+
+    await loader.after();
+
+    setStatus('Wgrywanie zakończone sukcesem!', false);
+    log('Firmware wgrany pomyślnie.');
+    btnConnect.disabled = false;
+  } catch (e) {
+    log(`Błąd wgrywania: ${e.message}`);
+    setStatus(`Błąd: ${e.message}`, true);
+    btnConnect.disabled = false;
+    btnFlash.disabled = false;
+  }
+});
+
 // --- Funkcja rozłączania ---
 async function disconnect() {
   try {
