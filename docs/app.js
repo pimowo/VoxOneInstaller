@@ -116,11 +116,17 @@ btnConnect.addEventListener('click', async () => {
     btnFlash.disabled = false;
 
   } catch (e) {
-    log(`Błąd połączenia: ${e.message}`);
-    setStatus(`Błąd: ${e.message}`, true);
     btnConnect.disabled = false;
     btnFlash.disabled = true;
-    await disconnect(); // Sprzątanie po błędzie
+    await disconnect();
+
+    if (e.name === 'NotFoundError' || e.message.includes('No port selected')) {
+      setStatus('Anulowano wybór portu. Upewnij się, że płytka jest podłączona i spróbuj ponownie.', false);
+      log('Anulowano okno wyboru portu.');
+    } else {
+      log(`Błąd połączenia: ${e.message}`);
+      setStatus(`Błąd: ${e.message}`, true);
+    }
   }
 });
 
