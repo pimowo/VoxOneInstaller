@@ -1,7 +1,7 @@
 :root {
     color-scheme: dark;
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    line-height: 1.5;
+    line-height: 1.45;
     font-weight: 400;
     --bg: #09111a;
     --panel: #12202d;
@@ -11,14 +11,11 @@
     --muted: #94a8b7;
     --cyan: #24d3e5;
     --cyan-dark: #163649;
-    --green: #43d39a;
+    --cyan-hover: #4adeeb;
     --red: #ff6874;
     --yellow: #f3ca57;
-    --control: #09141e;
-    --control-line: #304b60;
-    --button-hover: #19465c;
-    --focus-ring: #24d3e522;
-    --panel-shadow: #0006;
+    --terminal: #050a0f;
+    --terminal-line: #203548;
     background: var(--bg);
     color: var(--text);
 }
@@ -27,32 +24,49 @@
     box-sizing: border-box;
 }
 
+html {
+    min-height: 100%;
+    background: var(--bg);
+}
+
 body {
-    width: min(840px, calc(100% - 32px));
-    margin: 0 auto;
-    padding-bottom: 3rem;
+    min-height: 100vh;
+    margin: 0;
     overflow-x: hidden;
-    background: radial-gradient(circle at 15% -10%, #14384b 0, transparent 35%), var(--bg);
+    background: var(--bg);
     color: var(--text);
 }
 
-header {
-    padding: 2rem 0 1.5rem;
+.shell {
+    width: min(1100px, calc(100% - 32px));
+    margin: 0 auto;
+    padding-bottom: 3rem;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 1.75rem 0 1.25rem;
     border-bottom: 1px solid var(--line);
 }
 
 .logo {
     display: block;
-    width: clamp(180px, 32vw, 230px);
+    width: clamp(160px, 18vw, 190px);
     max-width: 100%;
     height: auto;
-    margin-bottom: 1.25rem;
+    flex: none;
+}
+
+.header-copy {
+    min-width: 0;
 }
 
 .eyebrow {
-    margin: 0 0 0.35rem;
+    margin: 0;
     color: var(--cyan);
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 750;
     letter-spacing: 0.15em;
 }
@@ -65,76 +79,78 @@ p {
 }
 
 h1 {
-    margin-bottom: 0.45rem;
+    margin: 0.2rem 0 0.35rem;
     color: var(--text);
-    font-size: clamp(1.8rem, 5vw, 2.2rem);
+    font-size: clamp(1.75rem, 4vw, 2rem);
     line-height: 1.15;
     letter-spacing: 0.02em;
 }
 
-header > p:last-child {
-    margin-bottom: 0;
+.subtitle {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
 }
 
 main {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
     padding-top: 1.5rem;
 }
 
 main > section {
     min-width: 0;
-    padding: 1.25rem;
+    padding: 1.5rem;
     border: 1px solid var(--line);
-    border-radius: 14px;
-    background: linear-gradient(145deg, var(--panel-2), var(--panel));
-    box-shadow: 0 14px 34px var(--panel-shadow);
+    border-radius: 12px;
+    background: var(--panel);
+}
+
+#log-section {
+    grid-column: 1 / -1;
 }
 
 h2 {
-    margin: 0 0 1rem;
-    padding-bottom: 0.65rem;
-    border-bottom: 1px solid var(--line);
-    color: var(--text);
-    font-size: 1.15rem;
-    line-height: 1.2;
-}
-
-p {
-    color: var(--muted);
+    margin: 0 0 1.25rem;
+    color: var(--cyan);
+    font-size: 0.94rem;
+    font-weight: 750;
+    line-height: 1.25;
+    letter-spacing: 0.04em;
 }
 
 #profiles {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
 }
 
 .profile-card {
+    min-height: 108px;
     padding: 1rem;
     border: 1px solid var(--line);
     border-radius: 10px;
     background: var(--panel-2);
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.2s;
+    transition: border-color 0.18s, background 0.18s;
 }
 
 .profile-card:hover {
-    border-color: var(--cyan);
-    background: var(--button-hover);
-    transform: translateY(-1px);
+    border-color: #31566a;
+    background: #192d3d;
 }
 
 .profile-card.selected {
     border-color: var(--cyan);
-    background: var(--cyan-dark);
-    box-shadow: inset 4px 0 0 var(--cyan), 0 0 0 1px var(--focus-ring);
+    background: #102936;
 }
 
 .profile-card h3 {
     margin: 0 0 0.4rem;
     color: var(--text);
     font-size: 1rem;
+    line-height: 1.3;
 }
 
 .profile-card.selected h3 {
@@ -143,7 +159,8 @@ p {
 
 .profile-card p {
     margin: 0;
-    font-size: 0.9rem;
+    color: var(--muted);
+    font-size: 0.88rem;
 }
 
 .buttons {
@@ -154,20 +171,16 @@ p {
 
 button {
     min-height: 44px;
-    padding: 0.65rem 1.1rem;
-    border: 1px solid var(--control-line);
+    padding: 0.65rem 1.15rem;
+    border: 1px solid var(--line);
     border-radius: 8px;
-    background: var(--cyan-dark);
+    background: var(--panel-2);
     color: var(--text);
     font: inherit;
+    font-size: 0.9rem;
     font-weight: 650;
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s, color 0.2s;
-}
-
-button:not(:disabled):hover {
-    border-color: var(--cyan);
-    background: var(--button-hover);
+    transition: border-color 0.18s, background 0.18s, color 0.18s;
 }
 
 button:focus-visible,
@@ -177,58 +190,77 @@ button:focus-visible,
 }
 
 button:disabled {
-    opacity: 0.5;
+    opacity: 0.45;
     cursor: not-allowed;
 }
 
 #btn-connect:not(:disabled) {
     border-color: var(--cyan);
+    background: var(--cyan-dark);
     color: var(--cyan);
 }
 
+#btn-connect:not(:disabled):hover {
+    background: #19465c;
+}
+
 #btn-flash:not(:disabled) {
-    border-color: var(--green);
-    color: var(--green);
+    border-color: var(--cyan);
+    background: var(--cyan);
+    color: #061014;
 }
 
 #btn-flash:not(:disabled):hover {
-    border-color: var(--green);
-    background: #173d3b;
+    border-color: var(--cyan-hover);
+    background: var(--cyan-hover);
 }
 
 .status {
     min-height: 1.5em;
     margin: 1rem 0 0;
     color: var(--yellow);
+    font-size: 0.9rem;
     font-weight: 700;
 }
 
 #log {
-    min-height: 8rem;
-    max-height: 300px;
+    min-height: 180px;
+    max-height: 340px;
     margin: 0;
-    padding: 1rem;
+    padding: 1.25rem;
     overflow: auto;
-    border: 1px solid var(--control-line);
-    border-radius: 10px;
-    background: var(--control);
+    border: 1px solid var(--terminal-line);
+    border-radius: 8px;
+    background: var(--terminal);
     color: var(--text);
-    font: 0.85rem/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+    font: 0.85rem/1.65 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
     white-space: pre-wrap;
-    box-shadow: inset 0 1px 10px #0005;
 }
 
-@media (max-width: 560px) {
-    body {
-        width: min(100% - 24px, 840px);
+@media (max-width: 760px) {
+    .shell {
+        width: min(100% - 24px, 1100px);
     }
 
-    header {
+    .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 1rem;
         padding-top: 1.25rem;
     }
 
+    main {
+        grid-template-columns: 1fr;
+    }
+
+    #log-section {
+        grid-column: auto;
+    }
+}
+
+@media (max-width: 480px) {
     main > section {
-        padding: 1rem;
+        padding: 1.25rem;
     }
 
     #profiles {

@@ -5,37 +5,41 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VoxOne Installer</title>
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./style.css?v=2" />
 </head>
 
 <body>
-  <header>
-    <img class="logo" src="./assets/logo.svg" alt="VoxOne" width="207" height="50" />
-    <p class="eyebrow">INSTALATOR FIRMWARE</p>
-    <h1>VoxOne Installer</h1>
-    <p>Wybierz płytkę, podłącz ją przez USB i kliknij Połącz.</p>
-  </header>
-
-  <main>
-    <section id="profiles-section">
-      <h2>1. Wybierz płytkę</h2>
-      <div id="profiles"></div>
-    </section>
-
-    <section id="actions-section">
-      <h2>2. Podłącz i wgraj</h2>
-      <div class="buttons">
-        <button id="btn-connect" disabled>Połącz</button>
-        <button id="btn-flash" disabled>Wgraj firmware</button>
+  <div class="shell">
+    <header class="topbar">
+      <img class="logo" src="./assets/logo.svg" alt="VoxOne" width="207" height="50" />
+      <div class="header-copy">
+        <p class="eyebrow">INSTALATOR FIRMWARE</p>
+        <h1>VoxOne Installer</h1>
+        <p class="subtitle">Wybierz płytkę, podłącz ją przez USB i kliknij Połącz.</p>
       </div>
-      <p id="status" class="status">Wybierz profil z listy powyżej.</p>
-    </section>
+    </header>
 
-    <section id="log-section">
-      <h2>Log</h2>
-      <pre id="log"></pre>
-    </section>
-  </main>
+    <main>
+      <section id="profiles-section">
+        <h2>1. Wybierz płytkę</h2>
+        <div id="profiles"></div>
+      </section>
+
+      <section id="actions-section">
+        <h2>2. Podłącz i wgraj</h2>
+        <div class="buttons">
+          <button id="btn-connect" disabled>Połącz</button>
+          <button id="btn-flash" disabled>Wgraj firmware</button>
+        </div>
+        <p id="status" class="status">Wybierz profil z listy powyżej.</p>
+      </section>
+
+      <section id="log-section">
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+  </div>
 
   <script type="module" src="./app.js?v=2"></script>
 </body>
