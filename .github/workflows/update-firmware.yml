@@ -1,0 +1,193 @@
+name: Aktualizacja firmware
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-firmware-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  update-firmware:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.VOXONE_RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Pobierz repozytorium instalatora
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Odczytaj najnowsze wydanie VoxOne
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if ! release_tag="$(gh release view --repo pimowo/VoxOne --json tagName --jq '.tagName')"; then
+            echo "::error::Nie udało się odczytać najnowszego wydania pimowo/VoxOne. Dla prywatnego repozytorium ustaw sekret VOXONE_RELEASE_TOKEN z prawem odczytu Contents."
+            exit 1
+          fi
+
+          if [[ -z "$release_tag" ]]; then
+            echo "::error::Repozytorium pimowo/VoxOne nie ma opublikowanego wydania."
+            exit 1
+          fi
+
+          release_version="${release_tag#v}"
+          echo "tag=$release_tag" >> "$GITHUB_OUTPUT"
+          echo "version=$release_version" >> "$GITHUB_OUTPUT"
+          echo "Znaleziono wydanie $release_tag."
+
+      - name: Pobierz binarki z wydania
+        shell: bash
+        run: |
+          set -euo pipefail
+          download_dir="$RUNNER_TEMP/voxone-release"
+          mkdir -p "$download_dir"
+
+          if ! gh release download "${{ steps.release.outputs.tag }}" \
+            --repo pimowo/VoxOne \
+            --pattern '*.bin' \
+            --dir "$download_dir"; then
+            echo "::warning::Wydanie nie zawiera dostępnych plików .bin. Profile zostaną pominięte."
+          fi
+
+      - name: Zaktualizuj firmware i manifest
+        env:
+          DOWNLOAD_DIR: ${{ runner.temp }}/voxone-release
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import json
+          import os
+          import re
+          import shutil
+          from pathlib import Path
+
+          manifest_path = Path('docs/profiles.json')
+          firmware_dir = Path('docs/firmware')
+          download_dir = Path(os.environ['DOWNLOAD_DIR'])
+          release_version = os.environ['RELEASE_VERSION'].strip()
+          profile_ids = ('s0', 'l0', 'm0', 'w0', 'din0')
+          rejected_parts = ('bootloader', 'partition', 'spiffs', 'full', 'merged', 'boot_app0', 'otadata')
+
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+          profiles = {profile['id'].lower(): profile for profile in manifest.get('profiles', [])}
+          firmware_dir.mkdir(parents=True, exist_ok=True)
+
+          def clean_version(value):
+              value = re.sub(r'\s*\(najnowsza\)\s*', '', str(value), flags=re.IGNORECASE).strip()
+              return value[1:] if value.lower().startswith('v') else value
+
+          def version_key(value):
+              clean = clean_version(value)
+              match = re.match(r'^(\d+)\.(\d+)\.(\d+)(?:[-+](.*))?$', clean)
+              if not match:
+                  return (0, 0, 0, 0, clean)
+              major, minor, patch = (int(match.group(i)) for i in range(1, 4))
+              suffix = match.group(4)
+              return (major, minor, patch, 1 if suffix is None else 0, suffix or '')
+
+          def find_asset(profile_id):
+              token = re.compile(rf'(^|[^a-z0-9]){re.escape(profile_id)}([^a-z0-9]|$)')
+              candidates = []
+              for path in download_dir.rglob('*.bin') if download_dir.exists() else []:
+                  name = path.name.lower()
+                  if not token.search(name) or any(part in name for part in rejected_parts):
+                      continue
+                  score = 0
+                  if name == f'voxone-{profile_id}.bin':
+                      score += 100
+                  if 'firmware' in name:
+                      score += 50
+                  if release_version.lower() in name:
+                      score += 10
+                  candidates.append((score, -len(name), name, path))
+              return max(candidates)[3] if candidates else None
+
+          updated_profiles = []
+          for profile_id in profile_ids:
+              profile = profiles.get(profile_id)
+              if profile is None:
+                  print(f'::warning::Brak profilu {profile_id.upper()} w docs/profiles.json; pomijam.')
+                  continue
+
+              asset = find_asset(profile_id)
+              if asset is None:
+                  print(f'::warning::Brak pliku firmware dla profilu {profile_id.upper()} w wydaniu; pomijam.')
+                  continue
+
+              canonical_rel = f'./firmware/voxone-{profile_id}.bin'
+              canonical_path = firmware_dir / f'voxone-{profile_id}.bin'
+              versions = list(profile.get('versions', []))
+              if not versions and profile.get('bin'):
+                  versions = [{
+                      'version': manifest.get('firmwareVersion', 'nieznana'),
+                      'bin': profile.pop('bin'),
+                  }]
+
+              current_entry = next((item for item in versions if item.get('bin') == canonical_rel), None)
+              current_version = clean_version(current_entry.get('version', '')) if current_entry else ''
+              if canonical_path.exists() and current_entry and current_version and current_version != release_version:
+                  safe_version = re.sub(r'[^0-9A-Za-z._-]+', '-', current_version)
+                  history_rel = f'./firmware/voxone-{profile_id}-{safe_version}.bin'
+                  history_path = firmware_dir / f'voxone-{profile_id}-{safe_version}.bin'
+                  if not history_path.exists():
+                      shutil.copy2(canonical_path, history_path)
+                  current_entry['bin'] = history_rel
+
+              shutil.copy2(asset, canonical_path)
+              normalized_versions = []
+              for item in versions:
+                  version = clean_version(item.get('version', ''))
+                  binary = item.get('bin')
+                  if not version or not binary or version == release_version:
+                      continue
+                  normalized_versions.append({'version': version, 'bin': binary})
+
+              normalized_versions.append({
+                  'version': release_version,
+                  'bin': canonical_rel,
+              })
+              normalized_versions.sort(key=lambda item: version_key(item['version']), reverse=True)
+              profile['versions'] = normalized_versions
+              profile.pop('bin', None)
+              updated_profiles.append(profile_id.upper())
+              print(f'Zaktualizowano {profile_id.upper()} z pliku {asset.name}.')
+
+          if updated_profiles:
+              manifest['schema'] = 2
+              manifest['firmwareVersion'] = release_version
+              manifest_path.write_text(
+                  json.dumps(manifest, ensure_ascii=False, indent=2) + '\n',
+                  encoding='utf-8',
+              )
+              print(f'Zaktualizowane profile: {", ".join(updated_profiles)}')
+          else:
+              print('::warning::Nie znaleziono żadnej pasującej binarki; manifest pozostaje bez zmian.')
+          PY
+
+      - name: Zapisz zmiany w repozytorium
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add docs/firmware docs/profiles.json
+
+          if git diff --cached --quiet; then
+            echo "Brak zmian do zapisania."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Aktualizacja firmware VoxOne do ${RELEASE_VERSION}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

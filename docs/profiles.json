@@ -1,12 +1,73 @@
 {
-  "schema": 1,
-  "firmwareVersion": "0.0.0-dev",
+  "schema": 2,
+  "firmwareVersion": "1.1.0",
   "profiles": [
     {
       "id": "s0",
       "label": "VoxOne S0 (ESP32-S3)",
       "chip": "esp32s3",
-      "bin": "./firmware/voxone-s0.bin"
+      "versions": [
+        {
+          "version": "1.1.0",
+          "bin": "./firmware/voxone-s0.bin"
+        },
+        {
+          "version": "1.0.0",
+          "bin": "./firmware/voxone-s0-1.0.0.bin"
+        }
+      ]
+    },
+    {
+      "id": "l0",
+      "label": "VoxOne L0 (ESP32-S3)",
+      "chip": "esp32s3",
+      "versions": [
+        {
+          "version": "1.1.0",
+          "bin": "./firmware/voxone-l0.bin"
+        }
+      ]
+    },
+    {
+      "id": "m0",
+      "label": "VoxOne M0 (ESP32-S3)",
+      "chip": "esp32s3",
+      "versions": [
+        {
+          "version": "1.1.0",
+          "bin": "./firmware/voxone-m0.bin"
+        },
+        {
+          "version": "1.0.0",
+          "bin": "./firmware/voxone-m0-1.0.0.bin"
+        }
+      ]
+    },
+    {
+      "id": "w0",
+      "label": "VoxOne W0 (ESP32)",
+      "chip": "esp32",
+      "versions": [
+        {
+          "version": "1.1.0",
+          "bin": "./firmware/voxone-w0.bin"
+        },
+        {
+          "version": "1.0.0",
+          "bin": "./firmware/voxone-w0-1.0.0.bin"
+        }
+      ]
+    },
+    {
+      "id": "din0",
+      "label": "VoxOne DIN0 (ESP32-S3)",
+      "chip": "esp32s3",
+      "versions": [
+        {
+          "version": "1.1.0",
+          "bin": "./firmware/voxone-din0.bin"
+        }
+      ]
     }
   ]
 }

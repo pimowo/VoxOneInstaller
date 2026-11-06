@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VoxOne Installer</title>
-  <link rel="stylesheet" href="./style.css?v=5" />
+  <link rel="stylesheet" href="./style.css?v=6" />
 </head>
 
 <body>
@@ -39,6 +39,12 @@
 
         <section id="actions-section">
           <h2>2. Podłącz i wgraj</h2>
+          <div class="version-selector">
+            <label for="version-select">Wersja firmware</label>
+            <select id="version-select" disabled>
+              <option value="">Najpierw wybierz profil</option>
+            </select>
+          </div>
           <div class="buttons">
             <button id="btn-connect" disabled>Połącz</button>
             <button id="btn-flash" disabled>Wgraj firmware</button>
@@ -79,7 +85,7 @@
     </footer>
   </div>
 
-  <script type="module" src="./app.js?v=5"></script>
+  <script type="module" src="./app.js?v=6"></script>
 </body>
 
 </html>
